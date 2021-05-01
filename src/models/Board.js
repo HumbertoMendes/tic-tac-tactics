@@ -1,5 +1,6 @@
 class Board {
   constructor() {
+    this._a = 'a';
   }
 }
 

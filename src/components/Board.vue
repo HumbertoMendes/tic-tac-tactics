@@ -1,5 +1,7 @@
 <template>
-  <div class="board">
+  <div class="board"
+    :key="restart"
+  >
     <square v-for="index in 9"
       :current-player="currentPlayer"
       :key="index"
@@ -14,6 +16,17 @@ import Square from './Square.vue';
 export default {
   components: { Square },
   name: 'board',
+  props: {
+    restart: {
+      type: Number,
+      required: true,
+    },
+  },
+  watch: {
+    restart() {
+      this.currentPlayer = 1;
+    },
+  },
   data() {
     return {
       currentPlayer: 1,
@@ -30,7 +43,7 @@ export default {
 
 <style lang="scss" scoped>
 .board {
-  width: 300px;
+  width: 302px;
   border: 1px solid black;
   display: flex;
   flex-wrap: wrap;

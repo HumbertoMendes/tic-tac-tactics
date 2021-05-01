@@ -50,8 +50,8 @@ $border-width: 14px;
 .player-1 {
   &::before {
     content: '';
-    width: calc(80% - #{$border-width * 2});
-    height: calc(80% - #{$border-width * 2});
+    width: 80%;
+    height: 80%;
     border: $border-width solid red;
     border-radius: 50%;
     display: block;
