@@ -22,13 +22,15 @@ export default {
   methods: {
     onClick() {
       const success = !this.player;
-      if (success) this.player = this.currentPlayer;
-      this.$emit('success', success);
+      if (success) {
+        this.player = this.currentPlayer;
+        this.$emit('success');
+      }
     },
   },
   computed: {
     playerClass() {
-      return this.player ? `player-${this.player}` : '';
+      return this.player !== null ? `player-${this.player}` : '';
     },
   },
 };
@@ -47,7 +49,7 @@ $border-width: 14px;
   position: relative;
 }
 
-.player-1 {
+.player-0 {
   &::before {
     content: '';
     width: 80%;
@@ -58,7 +60,7 @@ $border-width: 14px;
   }
 }
 
-.player-2 {
+.player-1 {
   &::before,
   &::after {
     content: '';

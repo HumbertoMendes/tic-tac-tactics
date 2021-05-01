@@ -1,5 +1,5 @@
 <template>
-  <v-content>
+  <v-main>
     <div class="d-flex flex-column align-center mt-4">
       <h1>Tic-Tac-Tactics!</h1>
       <board
@@ -7,12 +7,13 @@
       />
       <v-btn
         class="mt-4"
+        color="primary"
         @click="restartCount += 1"
       >
         Restart
       </v-btn>
     </div>
-  </v-content>
+  </v-main>
 </template>
 
 <script>

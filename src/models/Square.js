@@ -1,6 +1,7 @@
-class House {
-  constructor(position) {
-    this._position = position;
+class Square {
+  constructor(row, column) {
+    this._row = row;
+    this._column = column;
     this._tenant = null;
     // this._siblings = {
     //   topLeft: null,
@@ -15,8 +16,12 @@ class House {
     this._siblings = [];
   }
 
-  get position() {
-    return this._position;
+  get row() {
+    return this._row;
+  }
+
+  get column() {
+    return this._column;
   }
 
   get tenant() {
@@ -48,4 +53,4 @@ class House {
   }
 }
 
-export default House;
+export default Square;

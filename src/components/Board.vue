@@ -2,15 +2,20 @@
   <div class="board"
     :key="restart"
   >
-    <square v-for="index in 9"
-      :current-player="currentPlayer"
-      :key="index"
-      @success="(success) => onSuccess(success, index)"
-    />
+    <template
+      v-for="row in 3"
+    >
+      <square v-for="column in 3"
+        :current-player="currentPlayer"
+        :key="`${row}-${column}`"
+        @success="() => onSuccess(row, column)"
+      />
+    </template>
   </div>
 </template>
 
 <script>
+import SquareModel from '../models/Square';
 import Square from './Square.vue';
 
 export default {
@@ -24,19 +29,60 @@ export default {
   },
   watch: {
     restart() {
-      this.currentPlayer = 1;
+      this.currentPlayer = 0;
     },
   },
   data() {
     return {
       currentPlayer: 1,
+      plays: [[], []],
+      // validations: [
+      //   (plays) => plays.length > 2,
+      //   (plays) => plays,
+      // ],
+      grid: [],
     };
   },
+  created() {
+    const grid = [];
+
+    for (let row = 0; row < 3; row++) {
+      const items = [];
+      for (let column = 0; column < 3; column++) {
+        items.push(new SquareModel(row, column));
+      }
+      grid.push(items);
+    }
+
+    [].concat(...grid).forEach((square) => {
+      const siblings = [];
+
+      for (let i = -1; i <= 1; i++) {
+        const row = grid[square.row + i];
+
+        if (row) {
+          for (let j = -1; j <= 1; j++) {
+            if ((i || j) && row[square.column + j]) siblings.push(row[square.column + j]);
+          }
+        }
+      }
+
+      square.setSiblings(siblings);
+    });
+
+    this.grid = grid;
+  },
   methods: {
-    onSuccess(success, index) {
-      if (success) this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
-      console.log(index);
+    onSuccess(row, column) {
+      const play = [row, column];
+      this.plays[this.currentPlayer].push(play);
+
+      this.currentPlayer = this.currentPlayer === 0 ? 1 : 0;
     },
+    // checkVictory(play) {
+    //   play.forEach((play) => {
+    //   });
+    // },
   },
 };
 </script>
