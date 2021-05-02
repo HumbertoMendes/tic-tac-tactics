@@ -21,7 +21,7 @@ export default {
   },
   methods: {
     onClick() {
-      const success = !this.player;
+      const success = this.player === null;
       if (success) {
         this.player = this.currentPlayer;
         this.$emit('success');

@@ -1,17 +1,26 @@
 <template>
-  <div class="board"
-    :key="restart"
+  <v-card
+    class="elevation-0 d-flex flex-column align-center"
+    :disabled="victory"
   >
-    <template
-      v-for="row in 3"
+    <div
+      class="board"
+      :key="restart"
     >
-      <square v-for="column in 3"
-        :current-player="currentPlayer"
-        :key="`${row}-${column}`"
-        @success="() => onSuccess(row - 1, column - 1)"
-      />
-    </template>
-  </div>
+      <template
+        v-for="row in 3"
+      >
+        <square v-for="column in 3"
+          :current-player="currentPlayer"
+          :key="`${row}-${column}`"
+          @success="() => onSuccess(row - 1, column - 1)"
+        />
+      </template>
+    </div>
+    <h1 v-show="victory">
+      Congratulations Player #{{ currentPlayer + 1}}!
+    </h1>
+  </v-card>
 </template>
 
 <script>
@@ -31,6 +40,8 @@ export default {
   watch: {
     restart() {
       this.currentPlayer = 0;
+      this.playersPlays = [];
+      this.victory = false;
     },
   },
   data() {
@@ -42,6 +53,7 @@ export default {
       //   (plays) => plays,
       // ],
       grid: [],
+      victory: false,
     };
   },
   created() {
@@ -75,36 +87,32 @@ export default {
   },
   methods: {
     onSuccess(row, column) {
-      // const square = this.grid[row][column];
-      // square.setTenant(this.currentPlayer);
-      // this.plays[this.currentPlayer].push(play);
       this.playersPlays.push({
         player: this.currentPlayer,
         play: [row, column],
       });
-      const isVictory = this.checkVictory(this.currentPlayer, row, column);
-      console.log('Victory?', isVictory);
 
-      this.currentPlayer = this.currentPlayer === 0 ? 1 : 0;
+      const isVictory = this.checkVictory(this.currentPlayer, row, column);
+
+      if (isVictory) {
+        this.victory = isVictory;
+      } else {
+        this.currentPlayer = this.currentPlayer === 0 ? 1 : 0;
+      }
     },
     checkVictory(player, row, column) {
       const playerPlays = this.playersPlays.filter((play) => play.player === player);
 
       if (playerPlays.length < 3) return false;
       if (this.checkRow(playerPlays, row)) return true;
-      if (this.checkColumn(playerPlays, row, column)) return true;
+      if (this.checkColumn(playerPlays, column)) return true;
       return false;
     },
     checkRow(playerPlays, row) {
-      return playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[0] === row), 0);
+      return playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[0] === row), 0) === 3;
     },
-    checkColumn(playerPlays, row, column) {
-      switch (column) {
-        // case 0: return playerPlays.play[row][column] && playerPlays.play[row][column + 1] && playerPlays.play[row][column + 2];
-        // case 1: return playerPlays.play[row][column - 1] && playerPlays.play[row][column] && playerPlays.play[row][column + 1];
-        // case 2: return playerPlays.play[row][column - 2] && playerPlays.play[row][column - 1] && playerPlays.play[row][column];
-        default: return false;
-      }
+    checkColumn(playerPlays, column) {
+      return playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[1] === column), 0) === 3;
     },
   },
 };
