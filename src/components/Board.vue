@@ -8,13 +8,14 @@
       <square v-for="column in 3"
         :current-player="currentPlayer"
         :key="`${row}-${column}`"
-        @success="() => onSuccess(row, column)"
+        @success="() => onSuccess(row - 1, column - 1)"
       />
     </template>
   </div>
 </template>
 
 <script>
+/* eslint-disable max-len */
 import SquareModel from '../models/Square';
 import Square from './Square.vue';
 
@@ -34,8 +35,8 @@ export default {
   },
   data() {
     return {
-      currentPlayer: 1,
-      plays: [[], []],
+      currentPlayer: 0,
+      playersPlays: [],
       // validations: [
       //   (plays) => plays.length > 2,
       //   (plays) => plays,
@@ -74,15 +75,37 @@ export default {
   },
   methods: {
     onSuccess(row, column) {
-      const play = [row, column];
-      this.plays[this.currentPlayer].push(play);
+      // const square = this.grid[row][column];
+      // square.setTenant(this.currentPlayer);
+      // this.plays[this.currentPlayer].push(play);
+      this.playersPlays.push({
+        player: this.currentPlayer,
+        play: [row, column],
+      });
+      const isVictory = this.checkVictory(this.currentPlayer, row, column);
+      console.log('Victory?', isVictory);
 
       this.currentPlayer = this.currentPlayer === 0 ? 1 : 0;
     },
-    // checkVictory(play) {
-    //   play.forEach((play) => {
-    //   });
-    // },
+    checkVictory(player, row, column) {
+      const playerPlays = this.playersPlays.filter((play) => play.player === player);
+
+      if (playerPlays.length < 3) return false;
+      if (this.checkRow(playerPlays, row)) return true;
+      if (this.checkColumn(playerPlays, row, column)) return true;
+      return false;
+    },
+    checkRow(playerPlays, row) {
+      return playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[0] === row), 0);
+    },
+    checkColumn(playerPlays, row, column) {
+      switch (column) {
+        // case 0: return playerPlays.play[row][column] && playerPlays.play[row][column + 1] && playerPlays.play[row][column + 2];
+        // case 1: return playerPlays.play[row][column - 1] && playerPlays.play[row][column] && playerPlays.play[row][column + 1];
+        // case 2: return playerPlays.play[row][column - 2] && playerPlays.play[row][column - 1] && playerPlays.play[row][column];
+        default: return false;
+      }
+    },
   },
 };
 </script>

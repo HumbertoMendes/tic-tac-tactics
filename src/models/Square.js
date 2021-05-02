@@ -48,6 +48,16 @@ class Square {
     this._tenant = tenant;
   }
 
+  checkRow() {
+    const siblings = this.siblings.find((sibling) => sibling.row === this.row);
+    return siblings.every((sibling) => sibling.checkRow());
+  }
+
+  checkColumn() {
+    const siblings = this.siblings.find((sibling) => sibling.column === this.column);
+    return siblings.every((sibling) => sibling.checkColumn());
+  }
+
   clear() {
     this._tenant = null;
   }
