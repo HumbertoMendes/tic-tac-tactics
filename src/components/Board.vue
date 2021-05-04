@@ -19,7 +19,7 @@
       </div>
     </div>
     <h1 v-show="hasEnded">
-      Congratulations Player #{{ currentPlayer + 1}}!
+      {{ endMessage }}
     </h1>
   </v-card>
 </template>
@@ -59,6 +59,11 @@ export default {
   computed: {
     hasEnded() {
       return this.status !== StatusConstants.PLAYING;
+    },
+    endMessage() {
+      return this.status === StatusConstants.VICTORY
+        ? `Congratulations Player #${this.currentPlayer + 1}!`
+        : 'Draw :(';
     },
   },
   methods: {
