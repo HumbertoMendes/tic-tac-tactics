@@ -48,10 +48,6 @@ export default {
     return {
       currentPlayer: 0,
       playersPlays: [],
-      // validations: [
-      //   (plays) => plays.length > 2,
-      //   (plays) => plays,
-      // ],
       grid: [],
       victory: false,
     };
@@ -104,15 +100,20 @@ export default {
       const playerPlays = this.playersPlays.filter((play) => play.player === player);
 
       if (playerPlays.length < 3) return false;
-      if (this.checkRow(playerPlays, row)) return true;
-      if (this.checkColumn(playerPlays, column)) return true;
+      if (this.checkHorizontal(playerPlays, row)) return true;
+      if (this.checkVertical(playerPlays, column)) return true;
+      if (this.checkDiagonal(playerPlays)) return true;
       return false;
     },
-    checkRow(playerPlays, row) {
+    checkHorizontal(playerPlays, row) {
       return playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[0] === row), 0) === 3;
     },
-    checkColumn(playerPlays, column) {
+    checkVertical(playerPlays, column) {
       return playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[1] === column), 0) === 3;
+    },
+    checkDiagonal(playerPlays) {
+      return playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[0] === playerPlay.play[1]), 0) === 3
+        || playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[0] + playerPlay.play[1] === 2), 0) === 3;
     },
   },
 };
