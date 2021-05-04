@@ -1,7 +1,7 @@
 <template>
   <v-main>
     <div class="d-flex flex-column align-center mt-4">
-      <h1>Tic-Tac-Tactics!</h1>
+      <h1>Tic-Tactic-Toe!</h1>
       <board
         :restart="restartCount"
       />

@@ -1,23 +1,24 @@
 <template>
   <v-card
     class="elevation-0 d-flex flex-column align-center"
-    :disabled="victory"
+    :disabled="hasEnded"
   >
     <div
       class="board"
       :key="restart"
     >
-      <template
-        v-for="row in 3"
+      <div
+        v-for="row in boardSize"
+        :key="`${row}`"
       >
-        <square v-for="column in 3"
+        <square v-for="column in boardSize"
+          :key="`${column}`"
           :current-player="currentPlayer"
-          :key="`${row}-${column}`"
           @success="() => onSuccess(row - 1, column - 1)"
         />
-      </template>
+      </div>
     </div>
-    <h1 v-show="victory">
+    <h1 v-show="hasEnded">
       Congratulations Player #{{ currentPlayer + 1}}!
     </h1>
   </v-card>
@@ -25,8 +26,8 @@
 
 <script>
 /* eslint-disable max-len */
-import SquareModel from '../models/Square';
 import Square from './Square.vue';
+import { Status as StatusConstants } from '../../constants/gameConstants';
 
 export default {
   components: { Square },
@@ -42,44 +43,23 @@ export default {
       this.currentPlayer = 0;
       this.playersPlays = [];
       this.victory = false;
+      this.status = StatusConstants.PLAYING;
     },
   },
   data() {
     return {
+      boardSize: 3,
       currentPlayer: 0,
       playersPlays: [],
       grid: [],
       victory: false,
+      status: StatusConstants.PLAYING,
     };
   },
-  created() {
-    const grid = [];
-
-    for (let row = 0; row < 3; row++) {
-      const items = [];
-      for (let column = 0; column < 3; column++) {
-        items.push(new SquareModel(row, column));
-      }
-      grid.push(items);
-    }
-
-    [].concat(...grid).forEach((square) => {
-      const siblings = [];
-
-      for (let i = -1; i <= 1; i++) {
-        const row = grid[square.row + i];
-
-        if (row) {
-          for (let j = -1; j <= 1; j++) {
-            if ((i || j) && row[square.column + j]) siblings.push(row[square.column + j]);
-          }
-        }
-      }
-
-      square.setSiblings(siblings);
-    });
-
-    this.grid = grid;
+  computed: {
+    hasEnded() {
+      return this.status !== StatusConstants.PLAYING;
+    },
   },
   methods: {
     onSuccess(row, column) {
@@ -88,32 +68,31 @@ export default {
         play: [row, column],
       });
 
-      const isVictory = this.checkVictory(this.currentPlayer, row, column);
-
-      if (isVictory) {
-        this.victory = isVictory;
-      } else {
-        this.currentPlayer = this.currentPlayer === 0 ? 1 : 0;
-      }
+      if (this.checkVictory(this.currentPlayer, row, column)) this.status = StatusConstants.VICTORY;
+      else if (this.checkDraw()) this.status = StatusConstants.DRAW;
+      else if (!this.hasEnded) this.currentPlayer = this.currentPlayer === 0 ? 1 : 0;
+    },
+    checkDraw() {
+      return this.playersPlays.length === this.boardSize ** 2;
     },
     checkVictory(player, row, column) {
       const playerPlays = this.playersPlays.filter((play) => play.player === player);
 
-      if (playerPlays.length < 3) return false;
+      if (playerPlays.length < this.boardSize) return false;
       if (this.checkHorizontal(playerPlays, row)) return true;
       if (this.checkVertical(playerPlays, column)) return true;
       if (this.checkDiagonal(playerPlays)) return true;
       return false;
     },
     checkHorizontal(playerPlays, row) {
-      return playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[0] === row), 0) === 3;
+      return playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[0] === row), 0) === this.boardSize;
     },
     checkVertical(playerPlays, column) {
-      return playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[1] === column), 0) === 3;
+      return playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[1] === column), 0) === this.boardSize;
     },
     checkDiagonal(playerPlays) {
-      return playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[0] === playerPlay.play[1]), 0) === 3
-        || playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[0] + playerPlay.play[1] === 2), 0) === 3;
+      return playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[0] === playerPlay.play[1]), 0) === this.boardSize
+        || playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[0] + playerPlay.play[1] === this.boardSize - 1), 0) === this.boardSize;
     },
   },
 };
@@ -121,7 +100,8 @@ export default {
 
 <style lang="scss" scoped>
 .board {
-  width: 302px;
+  min-width: 300px;
+  max-width: 900px;
   border: 1px solid black;
   display: flex;
   flex-wrap: wrap;
