@@ -1,7 +1,7 @@
 <template>
   <div class="square"
     :class="playerClass"
-    @click="onClick"
+    v-on="$listeners"
   />
 </template>
 
@@ -9,28 +9,25 @@
 export default {
   name: 'square',
   props: {
-    currentPlayer: {
+    playersPlays: {
+      type: Array,
+      required: true,
+    },
+    row: {
+      type: Number,
+      required: true,
+    },
+    column: {
       type: Number,
       required: true,
     },
   },
-  data() {
-    return {
-      player: null,
-    };
-  },
-  methods: {
-    onClick() {
-      const success = this.player === null;
-      if (success) {
-        this.player = this.currentPlayer;
-        this.$emit('success');
-      }
-    },
-  },
   computed: {
     playerClass() {
-      return this.player !== null ? `player-${this.player}` : '';
+      const foundPlayerPlay = this.playersPlays.find(
+        (playerPlay) => playerPlay.play[0] === this.row && playerPlay.play[1] === this.column,
+      );
+      return foundPlayerPlay ? `player-${foundPlayerPlay.player}` : '';
     },
   },
 };

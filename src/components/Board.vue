@@ -13,14 +13,23 @@
       >
         <square v-for="column in boardSize"
           :key="`${column}`"
-          :current-player="currentPlayer"
-          @success="() => onSuccess(row - 1, column - 1)"
+          :row="row - 1"
+          :column="column - 1"
+          :players-plays="playersPlays"
+          @click="() => selectSquare(row - 1, column - 1)"
         />
       </div>
     </div>
     <h1 v-show="hasEnded">
       {{ endMessage }}
     </h1>
+    <v-btn
+      :disabled="hasEnded"
+      color="secondary"
+      @click="playCPU"
+    >
+     Play my Puppets
+    </v-btn>
   </v-card>
 </template>
 
@@ -44,11 +53,17 @@ export default {
       this.playersPlays = [];
       this.victory = false;
       this.status = StatusConstants.PLAYING;
+
+      if (this.intervalId !== null) {
+        clearInterval(this.intervalId);
+        this.intervalId = null;
+      }
     },
   },
   data() {
     return {
-      boardSize: 3,
+      intervalId: null,
+      boardSize: 4,
       currentPlayer: 0,
       playersPlays: [],
       grid: [],
@@ -67,7 +82,7 @@ export default {
     },
   },
   methods: {
-    onSuccess(row, column) {
+    selectSquare(row, column) {
       this.playersPlays.push({
         player: this.currentPlayer,
         play: [row, column],
@@ -99,14 +114,38 @@ export default {
       return playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[0] === playerPlay.play[1]), 0) === this.boardSize
         || playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[0] + playerPlay.play[1] === this.boardSize - 1), 0) === this.boardSize;
     },
+    chooseRandom() {
+      return Math.floor(Math.random(this.boardSize) * this.boardSize);
+    },
+    playCPU() {
+      if (this.hasEnded) return;
+
+      const plays = this.playersPlays.map((playerPlays) => playerPlays.play);
+      let found = false;
+
+      do {
+        const row = this.chooseRandom();
+        const column = this.chooseRandom();
+        found = plays.find((play) => play[0] === row && play[1] === column);
+
+        if (!found) {
+          this.selectSquare(row, column);
+          break;
+        }
+      } while (!found);
+
+      setTimeout(() => {
+        this.playCPU();
+      }, 10);
+    },
   },
 };
 </script>
 
 <style lang="scss" scoped>
 .board {
-  min-width: 300px;
-  max-width: 900px;
+  // min-width: 300px;
+  // max-width: 900px;
   border: 1px solid black;
   display: flex;
   flex-wrap: wrap;
