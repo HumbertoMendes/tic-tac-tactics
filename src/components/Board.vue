@@ -25,10 +25,11 @@
     </h1>
     <v-btn
       :disabled="hasEnded"
+      class="mt-4"
       color="secondary"
       @click="playCPU"
     >
-     Play my Puppets
+      Dance my Puppets
     </v-btn>
   </v-card>
 </template>
@@ -54,16 +55,16 @@ export default {
       this.victory = false;
       this.status = StatusConstants.PLAYING;
 
-      if (this.intervalId !== null) {
-        clearInterval(this.intervalId);
-        this.intervalId = null;
+      if (this.timeoutId !== null) {
+        clearInterval(this.timeoutId);
+        this.timeoutId = null;
       }
     },
   },
   data() {
     return {
-      intervalId: null,
-      boardSize: 4,
+      timeoutId: null,
+      boardSize: 10,
       currentPlayer: 0,
       playersPlays: [],
       grid: [],
@@ -134,7 +135,7 @@ export default {
         }
       } while (!found);
 
-      setTimeout(() => {
+      this.timeoutId = setTimeout(() => {
         this.playCPU();
       }, 10);
     },
