@@ -186,7 +186,7 @@ export default {
       const opponent = this.nextPlayer;
       const { availablePlays } = this;
       // const myPlays = this.getPlayerPlays(me);
-      const opponentPlays = this.getPlayerPlays(opponent);
+      // const opponentPlays = this.getPlayerPlays(opponent);
 
       let play = null;
       // First, try to win
@@ -223,10 +223,11 @@ export default {
 
       // Now check if there are corners available and the opponent has not selected the center
       const availableCorners = this.getPlayerCorners(null);
-      if (availableCorners.length > 0 && !opponentPlays.find((p) => p[0] === this.center && p[1] === this.center)) {
+      //  && !opponentPlays.find((p) => p[0] === this.center && p[1] === this.center)
+      if (availableCorners.length > 0) {
         // const myCorners = this.getPlayerCorners(me);
-
-        // if ()
+        const cornerIndex = Math.floor(Math.random(availableCorners.length) * availableCorners.length);
+        return availableCorners[cornerIndex].play;
       }
 
       const index = Math.floor(Math.random(availablePlays.length) * availablePlays.length);
