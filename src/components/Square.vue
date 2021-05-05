@@ -9,7 +9,7 @@
 export default {
   name: 'square',
   props: {
-    playersPlays: {
+    moves: {
       type: Array,
       required: true,
     },
@@ -24,10 +24,10 @@ export default {
   },
   computed: {
     playerClass() {
-      const foundPlayerPlay = this.playersPlays.find(
-        (playerPlay) => playerPlay.play[0] === this.row && playerPlay.play[1] === this.column,
+      const foundMove = this.moves.find(
+        (move) => move.play[0] === this.row && move.play[1] === this.column,
       );
-      return foundPlayerPlay ? `player-${foundPlayerPlay.player}` : '';
+      return foundMove ? `player-${foundMove.player}` : '';
     },
   },
 };

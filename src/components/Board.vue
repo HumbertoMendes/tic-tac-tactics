@@ -15,7 +15,7 @@
           :key="`${column}`"
           :row="row - 1"
           :column="column - 1"
-          :players-plays="playersPlays"
+          :moves="moves"
           @click="() => selectSquare(row - 1, column - 1)"
         />
       </div>
@@ -51,8 +51,7 @@ export default {
   watch: {
     restart() {
       this.currentPlayer = 0;
-      this.playersPlays = [];
-      this.victory = false;
+      this.clearMoves();
       this.status = StatusConstants.PLAYING;
 
       if (this.timeoutId !== null) {
@@ -64,13 +63,15 @@ export default {
   data() {
     return {
       timeoutId: null,
-      boardSize: 10,
+      boardSize: 3,
       currentPlayer: 0,
-      playersPlays: [],
+      moves: [],
       grid: [],
-      victory: false,
       status: StatusConstants.PLAYING,
     };
+  },
+  created() {
+    this.moves = this.createMoves();
   },
   computed: {
     hasEnded() {
@@ -81,63 +82,76 @@ export default {
         ? `Congratulations Player #${this.currentPlayer + 1}!`
         : 'Draw :(';
     },
+    availablePlays() {
+      return this.moves.filter((move) => move.player === null);
+    },
   },
   methods: {
     selectSquare(row, column) {
-      this.playersPlays.push({
-        player: this.currentPlayer,
-        play: [row, column],
-      });
+      const move = this.findMove(row, column);
+      move.player = this.currentPlayer;
 
       if (this.checkVictory(this.currentPlayer, row, column)) this.status = StatusConstants.VICTORY;
       else if (this.checkDraw()) this.status = StatusConstants.DRAW;
       else if (!this.hasEnded) this.currentPlayer = this.currentPlayer === 0 ? 1 : 0;
     },
     checkDraw() {
-      return this.playersPlays.length === this.boardSize ** 2;
+      return this.availablePlays.length === 0;
     },
     checkVictory(player, row, column) {
-      const playerPlays = this.playersPlays.filter((play) => play.player === player);
+      const moves = this.moves.filter((play) => play.player === player);
 
-      if (playerPlays.length < this.boardSize) return false;
-      if (this.checkHorizontal(playerPlays, row)) return true;
-      if (this.checkVertical(playerPlays, column)) return true;
-      if (this.checkDiagonal(playerPlays)) return true;
+      if (moves.length < this.boardSize) return false;
+      if (this.checkHorizontal(moves, row)) return true;
+      if (this.checkVertical(moves, column)) return true;
+      if (this.checkDiagonal(moves)) return true;
       return false;
     },
-    checkHorizontal(playerPlays, row) {
-      return playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[0] === row), 0) === this.boardSize;
+    checkHorizontal(moves, row) {
+      return moves.reduce((count, move) => count + (move.play[0] === row), 0) === this.boardSize;
     },
-    checkVertical(playerPlays, column) {
-      return playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[1] === column), 0) === this.boardSize;
+    checkVertical(moves, column) {
+      return moves.reduce((count, move) => count + (move.play[1] === column), 0) === this.boardSize;
     },
-    checkDiagonal(playerPlays) {
-      return playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[0] === playerPlay.play[1]), 0) === this.boardSize
-        || playerPlays.reduce((count, playerPlay) => count + (playerPlay.play[0] + playerPlay.play[1] === this.boardSize - 1), 0) === this.boardSize;
+    checkDiagonal(moves) {
+      return moves.reduce((count, move) => count + (move.play[0] === move.play[1]), 0) === this.boardSize
+        || moves.reduce((count, move) => count + (move.play[0] + move.play[1] === this.boardSize - 1), 0) === this.boardSize;
     },
     chooseRandom() {
       return Math.floor(Math.random(this.boardSize) * this.boardSize);
     },
+    createMoves() {
+      const availablePlays = [];
+
+      for (let row = 0; row < this.boardSize; row++) {
+        for (let column = 0; column < this.boardSize; column++) {
+          availablePlays.push({ player: null, play: [row, column] });
+        }
+      }
+
+      return availablePlays;
+    },
+    clearMoves() {
+      this.moves.forEach((move) => {
+        // eslint-disable-next-line no-param-reassign
+        move.player = null;
+      });
+    },
     playCPU() {
       if (this.hasEnded) return;
 
-      const plays = this.playersPlays.map((playerPlays) => playerPlays.play);
-      let found = false;
+      const plays = this.availablePlays.map((moves) => moves.play);
 
-      do {
-        const row = this.chooseRandom();
-        const column = this.chooseRandom();
-        found = plays.find((play) => play[0] === row && play[1] === column);
-
-        if (!found) {
-          this.selectSquare(row, column);
-          break;
-        }
-      } while (!found);
+      const index = Math.floor(Math.random(plays.length) * plays.length);
+      const play = plays[index];
+      this.selectSquare(play[0], play[1]);
 
       this.timeoutId = setTimeout(() => {
         this.playCPU();
-      }, 10);
+      }, 100);
+    },
+    findMove(row, column) {
+      return this.moves.find((move) => move.play[0] === row && move.play[1] === column);
     },
   },
 };
