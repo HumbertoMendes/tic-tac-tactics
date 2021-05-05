@@ -1,7 +1,7 @@
 <template>
   <v-card
     class="elevation-0 d-flex flex-column align-center"
-    :disabled="hasEnded"
+    :disabled="hasEnded || disabled"
   >
     <div
       class="board"
@@ -27,7 +27,7 @@
       :disabled="hasEnded"
       class="mt-4"
       color="secondary"
-      @click="playCPU"
+      @click="playCpu"
     >
       Dance my Puppets
     </v-btn>
@@ -68,6 +68,7 @@ export default {
       moves: [],
       grid: [],
       status: Status.PLAYING,
+      disabled: false,
     };
   },
   created() {
@@ -83,57 +84,76 @@ export default {
         ? `Congratulations Player #${this.currentPlayer + 1}!`
         : 'Draw :(';
     },
+    availableMoves() {
+      return this.getPlayerMoves(null);
+    },
     availablePlays() {
-      return this.moves.filter((move) => move.player === null);
+      return this.availableMoves.map((moves) => moves.play);
+    },
+    nextPlayer() {
+      return this.currentPlayer === 0 ? 1 : 0;
+    },
+    corners() {
+      return this.moves.filter((move) => ((move.play[0] + move.play[1] === this.boardSize - 1)
+          || (move.play[0] === move.play[1]))
+          && (move.play[0] !== this.center && move.play[1] !== this.center));
+    },
+    center() {
+      return parseInt(this.boardSize / 2);
     },
   },
   methods: {
+    getPlayerMoves(player) {
+      return this.moves.filter((move) => move.player === player);
+    },
+    getPlayerPlays(player) {
+      return this.getPlayerMoves(player).map((moves) => moves.play);
+    },
     selectSquare(row, column) {
       const move = this.findMove(row, column);
       move.player = this.currentPlayer;
 
-      if (this.checkVictory(this.currentPlayer, row, column)) this.status = Status.VICTORY;
+      const plays = this.getPlayerPlays(this.currentPlayer);
+      if (this.checkVictory(plays, row, column)) this.status = Status.VICTORY;
       else if (this.checkDraw()) this.status = Status.DRAW;
       else if (!this.hasEnded) {
-        this.currentPlayer = this.currentPlayer === 0 ? 1 : 0;
-        if (this.players[this.currentPlayer] === Player.CPU) this.playCPU();
+        this.currentPlayer = this.nextPlayer;
+        if (this.players[this.currentPlayer] === Player.CPU) this.playCpu();
       }
     },
     checkDraw() {
-      return this.availablePlays.length === 0;
+      return this.availableMoves.length === 0;
     },
-    checkVictory(player, row, column) {
-      const moves = this.moves.filter((play) => play.player === player);
-
-      if (moves.length < this.boardSize) return false;
-      if (this.checkHorizontal(moves, row)) return true;
-      if (this.checkVertical(moves, column)) return true;
-      if (this.checkDiagonal(moves)) return true;
+    checkVictory(plays, row, column) {
+      if (plays.length < this.boardSize) return false;
+      if (this.checkHorizontal(plays, row)) return true;
+      if (this.checkVertical(plays, column)) return true;
+      if (this.checkDiagonal(plays)) return true;
       return false;
     },
-    checkHorizontal(moves, row) {
-      return moves.reduce((count, move) => count + (move.play[0] === row), 0) === this.boardSize;
+    checkHorizontal(plays, row) {
+      return plays.reduce((count, play) => count + (play[0] === row), 0) === this.boardSize;
     },
-    checkVertical(moves, column) {
-      return moves.reduce((count, move) => count + (move.play[1] === column), 0) === this.boardSize;
+    checkVertical(plays, column) {
+      return plays.reduce((count, play) => count + (play[1] === column), 0) === this.boardSize;
     },
-    checkDiagonal(moves) {
-      return moves.reduce((count, move) => count + (move.play[0] === move.play[1]), 0) === this.boardSize
-        || moves.reduce((count, move) => count + (move.play[0] + move.play[1] === this.boardSize - 1), 0) === this.boardSize;
+    checkDiagonal(plays) {
+      return plays.reduce((count, play) => count + (play[0] === play[1]), 0) === this.boardSize
+        || plays.reduce((count, play) => count + (play[0] + play[1] === this.boardSize - 1), 0) === this.boardSize;
     },
     chooseRandom() {
       return Math.floor(Math.random(this.boardSize) * this.boardSize);
     },
     createMoves() {
-      const availablePlays = [];
+      const availableMoves = [];
 
       for (let row = 0; row < this.boardSize; row++) {
         for (let column = 0; column < this.boardSize; column++) {
-          availablePlays.push({ player: null, play: [row, column] });
+          availableMoves.push({ player: null, play: [row, column] });
         }
       }
 
-      return availablePlays;
+      return availableMoves;
     },
     clearMoves() {
       this.moves.forEach((move) => {
@@ -141,17 +161,61 @@ export default {
         move.player = null;
       });
     },
-    playCPU() {
-      if (this.hasEnded) return;
-
-      const plays = this.availablePlays.map((moves) => moves.play);
-
-      const index = Math.floor(Math.random(plays.length) * plays.length);
-      const play = plays[index];
-      this.selectSquare(play[0], play[1]);
-    },
     findMove(row, column) {
       return this.moves.find((move) => move.play[0] === row && move.play[1] === column);
+    },
+    findPlayerMoves(player) {
+      return this.moves.find((move) => move.player === player);
+    },
+    playCpu() {
+      if (this.hasEnded) return;
+
+      this.disabled = true;
+
+      const play = this.getCpuPlay();
+      this.selectSquare(play[0], play[1]);
+
+      this.disabled = false;
+    },
+    getCpuPlay() {
+      const plays = this.availablePlays;
+      const opponent = this.nextPlayer;
+
+      let play = null;
+      // First, try to win
+      for (let i = 0; i < plays.length; i++) {
+        const currentPlay = plays[i];
+        const [row, column] = currentPlay;
+        const mockPlays = [...this.getPlayerPlays(this.currentPlayer), [row, column]];
+
+        if (this.checkVictory(mockPlays, row, column)) {
+          play = currentPlay;
+          break;
+        }
+      }
+
+      if (play) return play;
+
+      // Next, prevent your opponent's victory
+      for (let i = 0; i < plays.length; i++) {
+        const currentPlay = plays[i];
+        const [row, column] = currentPlay;
+        const mockPlays = [...this.getPlayerPlays(opponent), [row, column]];
+
+        if (this.checkVictory(mockPlays, row, column)) {
+          play = currentPlay;
+          break;
+        }
+      }
+
+      if (play) return play;
+
+      // Now check if the opponent has a corner
+      const corners = this.corners.filter((move) => move.player === opponent);
+      if (corners.length > 0 && plays.find((p) => p[0] === this.center && p[1] === this.center)) return [this.center, this.center];
+
+      const index = Math.floor(Math.random(plays.length) * plays.length);
+      return plays[index];
     },
   },
 };

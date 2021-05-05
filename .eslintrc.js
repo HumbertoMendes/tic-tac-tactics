@@ -16,6 +16,7 @@ module.exports = {
     'linebreak-style': ['error', 'windows'],
     'no-underscore-dangle': ['error', { allowAfterThis: true }],
     'no-plusplus': ['error', { allowForLoopAfterthoughts: true }],
-    'import/prefer-default-export': 0
+    'import/prefer-default-export': 0,
+    'radix': ['error', 'as-needed']
   },
 };
