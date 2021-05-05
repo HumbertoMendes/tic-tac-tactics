@@ -94,9 +94,7 @@ export default {
       return this.currentPlayer === 0 ? 1 : 0;
     },
     corners() {
-      return this.moves.filter((move) => ((move.play[0] + move.play[1] === this.boardSize - 1)
-          || (move.play[0] === move.play[1]))
-          && (move.play[0] !== this.center && move.play[1] !== this.center));
+      return this.getPlayerCorners();
     },
     center() {
       return parseInt(this.boardSize / 2);
@@ -108,6 +106,12 @@ export default {
     },
     getPlayerPlays(player) {
       return this.getPlayerMoves(player).map((moves) => moves.play);
+    },
+    getPlayerCorners(player) {
+      return this.moves.filter((move) => ((move.play[0] + move.play[1] === this.boardSize - 1)
+          || (move.play[0] === move.play[1]))
+          && (move.play[0] !== this.center && move.play[1] !== this.center)
+          && (player === undefined ? true : move.player === player));
     },
     selectSquare(row, column) {
       const move = this.findMove(row, column);
@@ -178,15 +182,18 @@ export default {
       this.disabled = false;
     },
     getCpuPlay() {
-      const plays = this.availablePlays;
+      const me = this.currentPlayer;
       const opponent = this.nextPlayer;
+      const { availablePlays } = this;
+      // const myPlays = this.getPlayerPlays(me);
+      const opponentPlays = this.getPlayerPlays(opponent);
 
       let play = null;
       // First, try to win
-      for (let i = 0; i < plays.length; i++) {
-        const currentPlay = plays[i];
+      for (let i = 0; i < availablePlays.length; i++) {
+        const currentPlay = availablePlays[i];
         const [row, column] = currentPlay;
-        const mockPlays = [...this.getPlayerPlays(this.currentPlayer), [row, column]];
+        const mockPlays = [...this.getPlayerPlays(me), [row, column]];
 
         if (this.checkVictory(mockPlays, row, column)) {
           play = currentPlay;
@@ -197,8 +204,8 @@ export default {
       if (play) return play;
 
       // Next, prevent your opponent's victory
-      for (let i = 0; i < plays.length; i++) {
-        const currentPlay = plays[i];
+      for (let i = 0; i < availablePlays.length; i++) {
+        const currentPlay = availablePlays[i];
         const [row, column] = currentPlay;
         const mockPlays = [...this.getPlayerPlays(opponent), [row, column]];
 
@@ -211,11 +218,19 @@ export default {
       if (play) return play;
 
       // Now check if the opponent has a corner
-      const corners = this.corners.filter((move) => move.player === opponent);
-      if (corners.length > 0 && plays.find((p) => p[0] === this.center && p[1] === this.center)) return [this.center, this.center];
+      const opponentCorners = this.getPlayerCorners(opponent);
+      if (opponentCorners.length > 0 && availablePlays.find((p) => p[0] === this.center && p[1] === this.center)) return [this.center, this.center];
 
-      const index = Math.floor(Math.random(plays.length) * plays.length);
-      return plays[index];
+      // Now check if there are corners available and the opponent has not selected the center
+      const availableCorners = this.getPlayerCorners(null);
+      if (availableCorners.length > 0 && !opponentPlays.find((p) => p[0] === this.center && p[1] === this.center)) {
+        // const myCorners = this.getPlayerCorners(me);
+
+        // if ()
+      }
+
+      const index = Math.floor(Math.random(availablePlays.length) * availablePlays.length);
+      return availablePlays[index];
     },
   },
 };
