@@ -37,7 +37,7 @@
 <script>
 /* eslint-disable max-len */
 import Square from './Square.vue';
-import { Status as StatusConstants } from '../../constants/gameConstants';
+import { Status, Player } from '../../constants/gameConstants';
 
 export default {
   components: { Square },
@@ -52,7 +52,7 @@ export default {
     restart() {
       this.currentPlayer = 0;
       this.clearMoves();
-      this.status = StatusConstants.PLAYING;
+      this.status = Status.PLAYING;
 
       if (this.timeoutId !== null) {
         clearInterval(this.timeoutId);
@@ -67,18 +67,19 @@ export default {
       currentPlayer: 0,
       moves: [],
       grid: [],
-      status: StatusConstants.PLAYING,
+      status: Status.PLAYING,
     };
   },
   created() {
+    this.players = [Player.HUMAN, Player.CPU];
     this.moves = this.createMoves();
   },
   computed: {
     hasEnded() {
-      return this.status !== StatusConstants.PLAYING;
+      return this.status !== Status.PLAYING;
     },
     endMessage() {
-      return this.status === StatusConstants.VICTORY
+      return this.status === Status.VICTORY
         ? `Congratulations Player #${this.currentPlayer + 1}!`
         : 'Draw :(';
     },
@@ -91,9 +92,12 @@ export default {
       const move = this.findMove(row, column);
       move.player = this.currentPlayer;
 
-      if (this.checkVictory(this.currentPlayer, row, column)) this.status = StatusConstants.VICTORY;
-      else if (this.checkDraw()) this.status = StatusConstants.DRAW;
-      else if (!this.hasEnded) this.currentPlayer = this.currentPlayer === 0 ? 1 : 0;
+      if (this.checkVictory(this.currentPlayer, row, column)) this.status = Status.VICTORY;
+      else if (this.checkDraw()) this.status = Status.DRAW;
+      else if (!this.hasEnded) {
+        this.currentPlayer = this.currentPlayer === 0 ? 1 : 0;
+        if (this.players[this.currentPlayer] === Player.CPU) this.playCPU();
+      }
     },
     checkDraw() {
       return this.availablePlays.length === 0;
@@ -145,10 +149,6 @@ export default {
       const index = Math.floor(Math.random(plays.length) * plays.length);
       const play = plays[index];
       this.selectSquare(play[0], play[1]);
-
-      this.timeoutId = setTimeout(() => {
-        this.playCPU();
-      }, 100);
     },
     findMove(row, column) {
       return this.moves.find((move) => move.play[0] === row && move.play[1] === column);
