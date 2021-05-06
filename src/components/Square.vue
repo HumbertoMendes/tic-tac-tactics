@@ -1,7 +1,7 @@
 <template>
   <div class="square"
     :class="playerClass"
-    v-on="$listeners"
+    @click="onClick"
   />
 </template>
 
@@ -23,11 +23,19 @@ export default {
     },
   },
   computed: {
+    move() {
+      return this.moves.find((move) => move.play[0] === this.row && move.play[1] === this.column);
+    },
+    hasPlayer() {
+      return this.move && this.move.player !== null;
+    },
     playerClass() {
-      const foundMove = this.moves.find(
-        (move) => move.play[0] === this.row && move.play[1] === this.column,
-      );
-      return foundMove ? `player-${foundMove.player}` : '';
+      return this.hasPlayer ? `player-${this.move.player}` : '';
+    },
+  },
+  methods: {
+    onClick() {
+      if (!this.hasPlayer) this.$emit('click');
     },
   },
 };

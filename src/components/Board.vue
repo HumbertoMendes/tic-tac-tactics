@@ -50,6 +50,7 @@ export default {
   },
   watch: {
     restart() {
+      this.round = 0;
       this.currentPlayer = 0;
       this.clearMoves();
       this.status = Status.PLAYING;
@@ -62,6 +63,7 @@ export default {
   },
   data() {
     return {
+      round: 0,
       timeoutId: null,
       boardSize: 3,
       currentPlayer: 0,
@@ -121,6 +123,7 @@ export default {
       if (this.checkVictory(plays, row, column)) this.status = Status.VICTORY;
       else if (this.checkDraw()) this.status = Status.DRAW;
       else if (!this.hasEnded) {
+        this.round += 1;
         this.currentPlayer = this.nextPlayer;
         if (this.players[this.currentPlayer] === Player.CPU) this.playCpu();
       }
@@ -201,7 +204,10 @@ export default {
         }
       }
 
-      if (play) return play;
+      if (play) {
+        console.log('Trying to win', play, JSON.stringify(availablePlays));
+        return play;
+      }
 
       // Next, prevent your opponent's victory
       for (let i = 0; i < availablePlays.length; i++) {
@@ -215,23 +221,53 @@ export default {
         }
       }
 
-      if (play) return play;
+      if (play) {
+        console.log('Blocking my opponent', play, JSON.stringify(availablePlays));
+        return play;
+      }
 
-      // Now check if the opponent has a corner
+      // Now check if it is the first round and the opponent has a corner
       const opponentCorners = this.getPlayerCorners(opponent);
-      if (opponentCorners.length > 0 && availablePlays.find((p) => p[0] === this.center && p[1] === this.center)) return [this.center, this.center];
+      if (this.round === 1
+          && opponentCorners.length === 1
+          && availablePlays.find((p) => p[0] === this.center && p[1] === this.center)
+      ) {
+        play = [this.center, this.center];
+        console.log('Checking for corners, blocking the center', play, JSON.stringify(availablePlays));
+        return play;
+      }
 
       // Now check if there are corners available and the opponent has not selected the center
       const availableCorners = this.getPlayerCorners(null);
       //  && !opponentPlays.find((p) => p[0] === this.center && p[1] === this.center)
       if (availableCorners.length > 0) {
-        // const myCorners = this.getPlayerCorners(me);
+        const myCorners = this.getPlayerCorners(me);
+
+        for (let i = 0; i < myCorners.length; i++) {
+          const corner = myCorners[i];
+          const rowMod = corner.play[0] === 0 ? 1 : -1;
+          const columnMod = corner.play[1] === 0 ? 1 : -1;
+
+          if (availablePlays.reduce((count, availablePlay) => (count
+            + ((availablePlay[0] === (corner.play[0] + (1 * rowMod * count))
+            && (availablePlay[1] === (corner.play[1] + (1 * columnMod * count))), 1) === this.boardSize)))
+          ) {
+            play = [corner.play[0] + (2 * rowMod), corner.play[1] + (2 * columnMod)];
+            console.log('Checking for available opposite corners', play, JSON.stringify(availablePlays));
+            return play;
+          }
+        }
+
         const cornerIndex = Math.floor(Math.random(availableCorners.length) * availableCorners.length);
-        return availableCorners[cornerIndex].play;
+        play = availableCorners[cornerIndex].play;
+        console.log('Any random corners', play, JSON.stringify(availablePlays));
+        return play;
       }
 
       const index = Math.floor(Math.random(availablePlays.length) * availablePlays.length);
-      return availablePlays[index];
+      play = availablePlays[index];
+      console.log('Any random play', play, JSON.stringify(availablePlays));
+      return play;
     },
   },
 };
