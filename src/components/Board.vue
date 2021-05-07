@@ -1,14 +1,14 @@
 <template>
   <v-card
     class="elevation-0 d-flex flex-column align-center"
-    :disabled="hasEnded || disabled"
   >
     <h1>
       {{ message }}
     </h1>
-    <div
-      class="board"
+    <v-card
+      class="board elevation-0"
       :key="restart"
+      :disabled="hasEnded || disabled"
     >
       <div
         v-for="row in boardSize"
@@ -22,7 +22,7 @@
           @click="() => selectSquare(row - 1, column - 1)"
         />
       </div>
-    </div>
+    </v-card>
     <v-btn
       :disabled="hasEnded"
       class="mt-4"
