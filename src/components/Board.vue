@@ -113,6 +113,9 @@ export default {
     center() {
       return parseInt(this.boardSize / 2);
     },
+    isCurrentPlayerCpu() {
+      return this.players[this.currentPlayer] !== Player.HUMAN;
+    },
   },
   methods: {
     start() {
@@ -126,7 +129,7 @@ export default {
       this.clearMoves();
       this.status = Status.PLAYING;
 
-      if (this.players[this.currentPlayer] === Player.CPU) this.playCpu();
+      if (this.isCurrentPlayerCpu) this.playCpu();
     },
     getPlayerMoves(player) {
       return this.moves.filter((move) => move.player === player);
@@ -140,6 +143,10 @@ export default {
           && (move.play[0] !== this.center && move.play[1] !== this.center)
           && (player === undefined ? true : move.player === player));
     },
+    getPlayerCrosses(player) {
+      return this.moves.filter((move) => ((move.play[0] + move.play[1]) % 2 === 1)
+        && (player === undefined ? true : move.player === player));
+    },
     selectSquare(row, column) {
       const move = this.findMove(row, column);
       move.player = this.currentPlayer;
@@ -150,7 +157,7 @@ export default {
       else if (!this.hasEnded) {
         this.round += 1;
         this.currentPlayer = this.nextPlayer;
-        if (this.players[this.currentPlayer] === Player.CPU) this.playCpu();
+        if (this.isCurrentPlayerCpu) this.playCpu();
       }
     },
     checkDraw() {
@@ -158,18 +165,18 @@ export default {
     },
     checkVictory(plays, row, column) {
       if (plays.length < this.boardSize) return false;
-      if (this.checkHorizontal(plays, row)) return true;
-      if (this.checkVertical(plays, column)) return true;
-      if (this.checkDiagonal(plays)) return true;
+      if (this.checkHorizontalVictory(plays, row)) return true;
+      if (this.checkVerticalVictory(plays, column)) return true;
+      if (this.checkDiagonalVictory(plays)) return true;
       return false;
     },
-    checkHorizontal(plays, row) {
+    checkHorizontalVictory(plays, row) {
       return plays.reduce((count, play) => count + (play[0] === row), 0) === this.boardSize;
     },
-    checkVertical(plays, column) {
+    checkVerticalVictory(plays, column) {
       return plays.reduce((count, play) => count + (play[1] === column), 0) === this.boardSize;
     },
-    checkDiagonal(plays) {
+    checkDiagonalVictory(plays) {
       return plays.reduce((count, play) => count + (play[0] === play[1]), 0) === this.boardSize
         || plays.reduce((count, play) => count + (play[0] + play[1] === this.boardSize - 1), 0) === this.boardSize;
     },
@@ -219,7 +226,7 @@ export default {
         this.selectMoveWin,
         this.selectMoveBlockOpponent,
         this.selectMoveCenter,
-        this.selectMoveParallel,
+        this.selectMoveCross,
         this.selectMoveCorner,
         this.selectMoveRandom,
       ];
@@ -279,20 +286,21 @@ export default {
       const myPlays = this.getPlayerPlays(me);
       const opponentPlays = this.getPlayerPlays(opponent);
       const opponentCorners = this.getPlayerCorners(opponent);
+      const opponentCrosses = this.getPlayerCrosses(opponent);
       const { availablePlays } = this;
       let play = null;
 
-      if (myPlays.length + opponentPlays.length === 1
-          && opponentCorners.length === 1
-          && availablePlays.find((p) => p[0] === this.center && p[1] === this.center)
-      ) {
+      if ((
+        (myPlays.length + opponentPlays.length === 1 && opponentCorners.length === 1)
+        || (opponentCrosses.length === 2))
+        && availablePlays.find((p) => p[0] === this.center && p[1] === this.center)) {
         play = [this.center, this.center];
       }
 
-      if (play) console.log('Checking for corners, blocking the center', play, JSON.stringify(availablePlays));
+      if (play) console.log('Blocking the center', play, JSON.stringify(availablePlays));
       return play;
     },
-    selectMoveParallel() {
+    selectMoveCross() {
       const { availablePlays } = this;
       const me = this.currentPlayer;
       const opponent = this.nextPlayer;
@@ -302,9 +310,10 @@ export default {
 
       // Check if the opponent has two or more corners and I've selected the center
       if (opponentCorners.length > 1 && myPlays.find((myPlay) => myPlay[0] === 1 && myPlay[1] === 1)) {
-        const crossPlays = availablePlays.filter((availablePlay) => (availablePlay[0] + availablePlay[1]) % 2 === 1);
-        const cornerIndex = Math.floor(Math.random(crossPlays.length) * crossPlays.length);
-        play = crossPlays[cornerIndex];
+        const crossMoves = this.getPlayerCrosses();
+        const index = this.getRandomIndex(crossMoves.length);
+
+        play = crossMoves[index].play;
       }
 
       if (play) console.log('Any random diagonally opposite', play, JSON.stringify(availablePlays));
@@ -327,10 +336,10 @@ export default {
 
           if (availablePlays.reduce(
             (count, availablePlay) => {
-              const aRow = availablePlay[0] === (corner.play[0] + (1 * rowMod * count));
-              const aColumn = availablePlay[1] === (corner.play[1] + (1 * columnMod * count));
+              const row = availablePlay[0] === (corner.play[0] + (1 * rowMod * count));
+              const column = availablePlay[1] === (corner.play[1] + (1 * columnMod * count));
 
-              return count + (aRow && aColumn);
+              return count + (row && column);
             }, 1,
           ) === this.boardSize) {
             play = [corner.play[0] + (2 * rowMod), corner.play[1] + (2 * columnMod)];
