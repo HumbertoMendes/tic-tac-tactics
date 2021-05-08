@@ -22,14 +22,6 @@
         />
       </div>
     </v-card>
-    <!-- <v-btn
-      :disabled="hasEnded"
-      class="mt-4"
-      color="secondary"
-      @click="playCpu"
-    >
-      Dance my Puppets
-    </v-btn> -->
     <div class="d-flex align-center mt-4">
       <div class="d-flex">
         <v-select
@@ -179,9 +171,6 @@ export default {
       return plays.reduce((count, play) => count + (play[0] === play[1]), 0) === this.boardSize
         || plays.reduce((count, play) => count + (play[0] + play[1] === this.boardSize - 1), 0) === this.boardSize;
     },
-    chooseRandom() {
-      return Math.floor(Math.random(this.boardSize) * this.boardSize);
-    },
     createMoves() {
       const availableMoves = [];
 
@@ -205,6 +194,9 @@ export default {
     findPlayerMoves(player) {
       return this.moves.find((move) => move.player === player);
     },
+    getRandomIndex(max) {
+      return Math.floor(Math.random(max) * max);
+    },
     playCpu() {
       if (this.hasEnded) return;
 
@@ -218,16 +210,32 @@ export default {
       }, 500);
     },
     getCpuPlay() {
-      const me = this.currentPlayer;
-      const opponent = this.nextPlayer;
-      const { availablePlays } = this;
-      const myPlays = this.getPlayerPlays(me);
-      const opponentPlays = this.getPlayerPlays(opponent);
-
       console.log(`Round #${this.round}`);
-      console.log(`Current Player: #${me}`);
-      let play = null;
+      console.log(`Current Player: #${this.currentPlayer}`);
+
+      const moves = [
+        this.selectMoveWin,
+        this.selectMoveBlockOpponent,
+        this.selectMoveCenter,
+        this.selectMoveParallel,
+        this.selectMoveCorner,
+        this.selectMoveRandom,
+      ];
+
+      for (let i = 0; i < moves.length; i++) {
+        const play = moves[i]();
+
+        if (play) return play;
+      }
+
+      return null;
+    },
+    selectMoveWin() {
       // First, try to win
+      const me = this.currentPlayer;
+      const { availablePlays } = this;
+      let play = null;
+
       for (let i = 0; i < availablePlays.length; i++) {
         const currentPlay = availablePlays[i];
         const [row, column] = currentPlay;
@@ -239,12 +247,15 @@ export default {
         }
       }
 
-      if (play) {
-        console.log('Trying to win', play, JSON.stringify(availablePlays));
-        return play;
-      }
-
+      if (play) console.log('Trying to win', play, JSON.stringify(availablePlays));
+      return play;
+    },
+    selectMoveBlockOpponent() {
       // Next, prevent your opponent's victory
+      const { availablePlays } = this;
+      const opponent = this.nextPlayer;
+      let play = null;
+
       for (let i = 0; i < availablePlays.length; i++) {
         const currentPlay = availablePlays[i];
         const [row, column] = currentPlay;
@@ -256,33 +267,51 @@ export default {
         }
       }
 
-      if (play) {
-        console.log('Blocking my opponent', play, JSON.stringify(availablePlays));
-
-        return play;
-      }
-
+      if (play) console.log('Blocking my opponent', play, JSON.stringify(availablePlays));
+      return play;
+    },
+    selectMoveCenter() {
       // Now check if it is the first round and the opponent has a corner
+      const me = this.currentPlayer;
+      const opponent = this.nextPlayer;
+      const myPlays = this.getPlayerPlays(me);
+      const opponentPlays = this.getPlayerPlays(opponent);
       const opponentCorners = this.getPlayerCorners(opponent);
+      const { availablePlays } = this;
+      let play = null;
+
       if (myPlays.length + opponentPlays.length === 1
           && opponentCorners.length === 1
           && availablePlays.find((p) => p[0] === this.center && p[1] === this.center)
       ) {
         play = [this.center, this.center];
-        console.log('Checking for corners, blocking the center', play, JSON.stringify(availablePlays));
-
-        return play;
       }
+
+      if (play) console.log('Checking for corners, blocking the center', play, JSON.stringify(availablePlays));
+      return play;
+    },
+    selectMoveParallel() {
+      const { availablePlays } = this;
+      const me = this.currentPlayer;
+      const opponent = this.nextPlayer;
+      const myPlays = this.getPlayerPlays(me);
+      const opponentCorners = this.getPlayerCorners(opponent);
+      let play = null;
 
       // Check if the opponent has two or more corners and I've selected the center
       if (opponentCorners.length > 1 && myPlays.find((myPlay) => myPlay[0] === 1 && myPlay[1] === 1)) {
         const crossPlays = availablePlays.filter((availablePlay) => (availablePlay[0] + availablePlay[1]) % 2 === 1);
         const cornerIndex = Math.floor(Math.random(crossPlays.length) * crossPlays.length);
         play = crossPlays[cornerIndex];
-        console.log('Any random diagonally opposite', play, JSON.stringify(availablePlays));
-
-        return play;
       }
+
+      if (play) console.log('Any random diagonally opposite', play, JSON.stringify(availablePlays));
+      return play;
+    },
+    selectMoveCorner() {
+      const { availablePlays } = this;
+      const me = this.currentPlayer;
+      let play = null;
 
       // Now check if there are corners available and the opponent has not selected the center
       const availableCorners = this.getPlayerCorners(null);
@@ -309,15 +338,19 @@ export default {
           }
         }
 
-        const cornerIndex = Math.floor(Math.random(availableCorners.length) * availableCorners.length);
+        const cornerIndex = this.getRandomIndex(availableCorners.length);
         play = availableCorners[cornerIndex].play;
         console.log('Any random corners', play, JSON.stringify(availablePlays));
 
         return play;
       }
 
-      const index = Math.floor(Math.random(availablePlays.length) * availablePlays.length);
-      play = availablePlays[index];
+      return null;
+    },
+    selectMoveRandom() {
+      const { availablePlays } = this;
+      const index = this.getRandomIndex(availablePlays.length);
+      const play = availablePlays[index];
       console.log('Any random play', play, JSON.stringify(availablePlays));
 
       return play;
@@ -328,8 +361,6 @@ export default {
 
 <style lang="scss" scoped>
 .board {
-  // min-width: 300px;
-  // max-width: 900px;
   border: 1px solid black;
   display: flex;
   flex-wrap: wrap;
