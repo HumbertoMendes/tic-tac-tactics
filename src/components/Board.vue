@@ -8,6 +8,7 @@
     <v-card
       class="board d-flex flex-wrap elevation-0"
       :disabled="hasEnded || disabled"
+      :class="isPlaying ? 'white' : 'grey lighten-4'"
     >
       <div
         v-for="row in boardSize"
