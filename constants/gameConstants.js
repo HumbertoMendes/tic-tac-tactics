@@ -1,4 +1,5 @@
 export const Status = Object.freeze({
+  IDLE: 'idle',
   PLAYING: 'playing',
   VICTORY: 'victory',
   DRAW: 'draw',

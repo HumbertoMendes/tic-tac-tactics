@@ -7,7 +7,6 @@
     </h1>
     <v-card
       class="board elevation-0"
-      :key="restart"
       :disabled="hasEnded || disabled"
     >
       <div
@@ -23,14 +22,44 @@
         />
       </div>
     </v-card>
-    <v-btn
+    <!-- <v-btn
       :disabled="hasEnded"
       class="mt-4"
       color="secondary"
       @click="playCpu"
     >
       Dance my Puppets
-    </v-btn>
+    </v-btn> -->
+    <div class="d-flex align-center mt-4">
+      <div class="d-flex">
+        <v-select
+          v-model="player1"
+          :items="playerList"
+          hide-details
+          outlined
+          dense
+          label="Player 1"
+          :disabled="isPlaying"
+        />
+        <v-select
+          v-model="player2"
+          :items="playerList"
+          hide-details
+          class="ml-4"
+          outlined
+          dense
+          label="Player 2"
+          :disabled="isPlaying"
+        />
+      </div>
+      <v-btn
+        color="primary"
+        class="ml-4"
+        @click="start()"
+      >
+        {{ isPlaying ? 'Restart' : 'Start' }}
+      </v-btn>
+    </div>
   </v-card>
 </template>
 
@@ -42,55 +71,39 @@ import { Status, Player } from '../../constants/gameConstants';
 export default {
   components: { Square },
   name: 'board',
-  props: {
-    restart: {
-      type: Number,
-      required: true,
-    },
-  },
-  watch: {
-    restart() {
-      console.clear();
-      console.log('================NEW GAME================');
-      this.round = 0;
-      this.currentPlayer = 0;
-      this.clearMoves();
-      this.status = Status.PLAYING;
-
-      if (this.timeoutId !== null) {
-        clearInterval(this.timeoutId);
-        this.timeoutId = null;
-      }
-
-      this.start();
-    },
-  },
   data() {
     return {
       round: 0,
-      timeoutId: null,
       boardSize: 3,
-      currentPlayer: 0,
       moves: [],
       grid: [],
-      status: Status.PLAYING,
+      status: Status.IDLE,
       disabled: false,
+      player1: null,
+      player2: null,
+      currentPlayer: null,
+      playerList: [],
+      players: [],
     };
   },
   created() {
-    this.players = [Player.CPU, Player.HUMAN];
     this.moves = this.createMoves();
-
-    this.start();
+    this.playerList = Object.entries(Player).map(([key, value]) => ({ text: key, value }));
+    this.player1 = Player.HUMAN;
+    this.player2 = Player.CPU;
   },
   computed: {
+    isPlaying() {
+      return this.status === Status.PLAYING;
+    },
     hasEnded() {
       return this.status !== Status.PLAYING;
     },
     message() {
       if (this.status === Status.DRAW) return 'Draw :(';
       if (this.status === Status.VICTORY) return `Congratulations Player #${this.currentPlayer + 1}!`;
-      return `Current player: ${this.currentPlayer + 1}`;
+      if (this.status === Status.PLAYING) return `Current player: ${this.currentPlayer + 1}`;
+      return 'Press START!';
     },
     availableMoves() {
       return this.getPlayerMoves(null);
@@ -110,7 +123,16 @@ export default {
   },
   methods: {
     start() {
-      if (this.players[0] === Player.CPU) this.playCpu();
+      console.clear();
+      console.log('================NEW GAME================');
+      this.players = [this.player1, this.player2];
+
+      this.round = 0;
+      this.currentPlayer = Math.round(Math.random());
+      this.clearMoves();
+      this.status = Status.PLAYING;
+
+      if (this.players[this.currentPlayer] === Player.CPU) this.playCpu();
     },
     getPlayerMoves(player) {
       return this.moves.filter((move) => move.player === player);
