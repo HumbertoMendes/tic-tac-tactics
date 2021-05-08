@@ -101,8 +101,8 @@ export default {
     },
     message() {
       if (this.status === Status.DRAW) return 'Draw :(';
-      if (this.status === Status.VICTORY) return `Congratulations Player #${this.currentPlayer + 1}!`;
-      if (this.status === Status.PLAYING) return `Current player: ${this.currentPlayer + 1}`;
+      if (this.status === Status.VICTORY) return `Congratulations Player ${this.currentPlayer + 1}!`;
+      if (this.status === Status.PLAYING) return `Current: Player ${this.currentPlayer + 1}`;
       return 'Press START!';
     },
     availableMoves() {
