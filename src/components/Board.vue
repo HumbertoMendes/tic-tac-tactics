@@ -6,7 +6,7 @@
       {{ message }}
     </h1>
     <v-card
-      class="board elevation-0"
+      class="board d-flex flex-wrap elevation-0"
       :disabled="hasEnded || disabled"
     >
       <div
@@ -362,8 +362,5 @@ export default {
 <style lang="scss" scoped>
 .board {
   border: 1px solid black;
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
 }
 </style>
