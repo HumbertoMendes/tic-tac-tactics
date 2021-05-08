@@ -119,6 +119,7 @@ export default {
       console.clear();
       console.log('================NEW GAME================');
       this.players = [this.player1, this.player2];
+      if (this.timeoutId) clearTimeout(this.timeoutId);
 
       this.round = 0;
       this.currentPlayer = Math.round(Math.random());
@@ -205,7 +206,7 @@ export default {
 
       const play = this.getCpuPlay();
 
-      setTimeout(() => {
+      this.timeoutId = setTimeout(() => {
         this.selectSquare(play[0], play[1]);
         this.disabled = false;
       }, 500);
